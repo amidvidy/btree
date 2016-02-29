@@ -32,6 +32,8 @@ public:
 
     std::ostream& print(std::ostream& os) final;
 private:
+    void insert_node(key_type key, std::unique_ptr<node> node) final;
+
     internal_node* _parent = nullptr;
 
     friend class iterator;
@@ -40,6 +42,8 @@ private:
     leaf_node* _prev = nullptr;
 
     std::size_t _size = 0;
+
+    btree* _owner;
 
     std::array<std::tuple<key_type, value_type>, kBranchingFactor> _storage;
 
@@ -59,13 +63,9 @@ private:
         return std::get<0>(*storage_begin());
     }
 
-    btree* _owner;
-
     static bool item_comparator(const item_type& rhs, const item_type& lhs) {
         return std::get<0>(rhs) < std::get<0>(lhs);
     }
-
-    void insert_node(key_type key, std::unique_ptr<node> node) final;
 };
 
 class iterator : public std::iterator<std::bidirectional_iterator_tag,
@@ -107,13 +107,11 @@ public:
     std::ostream& print(std::ostream& os) final;
 private:
     void insert_node(key_type lowest_key, std::unique_ptr<node> node) final;
+    void set_parent(internal_node* parent) final { _parent = parent; }
 
     internal_node* _parent = nullptr;
     btree* _owner = nullptr;
-
     std::size_t _size = 0;
-
-    void set_parent(internal_node* parent) final { _parent = parent; }
 
     using internal_item_type = std::tuple<key_type, std::unique_ptr<node>>;
 
@@ -126,6 +124,5 @@ private:
 
     auto storage_begin() { return std::begin(_storage); }
     auto storage_end() { return storage_begin() + _size; }
-
     key_type lowest_key() final { return std::get<0>(*storage_begin()); }
 };

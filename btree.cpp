@@ -102,8 +102,6 @@ void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
 
         // If we are not the root.
         if (_parent) {
-            std::cout << "_parent is: " << _parent;
-            new_node->_parent = _parent;
             _parent->insert_node(new_node->lowest_key(), std::move(new_node));
         } else {
             // We are the root.
