@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "btree.hpp"
+#include "internal.hpp"
 
  // ================= iterator ==================================================
 
@@ -163,6 +164,8 @@ iterator leaf_node::begin() {
 }
 
 // =============== btree =======================================================
+
+btree::btree() : _root(std::make_unique<leaf_node>(this)) {}
 
 iterator btree::insert(key_type key, value_type value) {
     return _root->insert(key, value);
