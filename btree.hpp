@@ -34,7 +34,5 @@ public:
     // For debugging.
     std::ostream& print(std::ostream& os);
 private:
-    void insert_node(key_type key, std::unique_ptr<node> node);
-
     std::unique_ptr<node> _root;
 };

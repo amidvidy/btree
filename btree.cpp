@@ -280,10 +280,6 @@ std::ostream& btree::print(std::ostream& os) {
     return _root->print(os);
 }
 
-void btree::insert_node(key_type lowest_key, std::unique_ptr<node> node) {
-    _root->insert_node(lowest_key, std::move(node));
-}
-
 int main() {
     btree bt;
 
