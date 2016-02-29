@@ -179,7 +179,7 @@ iterator leaf_node::insert(key_type key, value_type value) {
         std::move(split_point, storage_end(), new_node->storage_begin());
 
         auto old_size = _size;
-        _size = old_size / 2;
+        _size = split_point - storage_begin();
         new_node->_size += old_size - _size; // handle odd branching factors...
 
         // If we are not the root.
