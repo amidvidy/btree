@@ -13,7 +13,6 @@ public:
     virtual iterator insert(key_type key, value_type value) = 0;
     virtual iterator begin() = 0;
     virtual std::ostream& print(std::ostream& os) = 0;
-    virtual void insert_node(key_type key, std::unique_ptr<node> node) = 0;
     virtual void set_parent(internal_node* parent) = 0;
 
     virtual key_type lowest_key() = 0;
@@ -32,8 +31,6 @@ public:
 
     std::ostream& print(std::ostream& os) final;
 private:
-    void insert_node(key_type key, std::unique_ptr<node> node) final;
-
     internal_node* _parent = nullptr;
 
     friend class iterator;
@@ -106,7 +103,7 @@ public:
 
     std::ostream& print(std::ostream& os) final;
 private:
-    void insert_node(key_type lowest_key, std::unique_ptr<node> node) final;
+    void insert_node(key_type lowest_key, std::unique_ptr<node> node);
     void set_parent(internal_node* parent) final { _parent = parent; }
 
     internal_node* _parent = nullptr;

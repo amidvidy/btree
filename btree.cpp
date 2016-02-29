@@ -2,7 +2,6 @@
 #include <iterator>
 #include <iostream>
 #include <stdexcept>
-#include <cassert>
 
 #include "btree.hpp"
 #include "internal.hpp"
@@ -248,10 +247,6 @@ std::ostream& leaf_node::print(std::ostream& os) {
         ++iter;
     }
     return os;
-}
-
-void leaf_node::insert_node(key_type key, std::unique_ptr<node> node) {
-    assert(false);
 }
 
 // =============== btree =======================================================
