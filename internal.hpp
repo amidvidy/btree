@@ -12,6 +12,11 @@ public:
     virtual iterator search(key_type key) = 0;
     virtual iterator insert(key_type key, value_type value) = 0;
     virtual iterator begin() = 0;
+    virtual std::ostream& print(std::ostream& os) = 0;
+    virtual void insert_node(key_type key, std::unique_ptr<node> node) = 0;
+    virtual void set_parent(internal_node* parent) = 0;
+
+    virtual key_type lowest_key() = 0;
 };
 
 class leaf_node : public node {
@@ -24,6 +29,8 @@ public:
 
     leaf_node* next() { return _next; }
     leaf_node* prev() { return _prev; }
+
+    std::ostream& print(std::ostream& os) final;
 private:
     internal_node* _parent = nullptr;
 
@@ -38,6 +45,8 @@ private:
 
     using storage_iter_type = decltype(std::begin(_storage));
 
+    void set_parent(internal_node* parent) final { _parent = parent; }
+
     auto storage_begin() {
         return std::begin(_storage);
     }
@@ -46,7 +55,7 @@ private:
         return storage_begin() + _size;
     }
 
-    key_type lowest_key() {
+    key_type lowest_key() final {
         return std::get<0>(*storage_begin());
     }
 
@@ -55,6 +64,8 @@ private:
     static bool item_comparator(const item_type& rhs, const item_type& lhs) {
         return std::get<0>(rhs) < std::get<0>(lhs);
     }
+
+    void insert_node(key_type key, std::unique_ptr<node> node) final;
 };
 
 class iterator : public std::iterator<std::bidirectional_iterator_tag,
@@ -86,20 +97,23 @@ private:
 class internal_node : public node {
     friend class leaf_node;
 public:
+    internal_node(btree* owner);
+
     iterator insert(key_type key, value_type value) final;
     iterator search(key_type key) final;
 
     iterator begin() final;
 
+    std::ostream& print(std::ostream& os) final;
 private:
-    void insert_node(key_type lowest_key, std::unique_ptr<node> node);
+    void insert_node(key_type lowest_key, std::unique_ptr<node> node) final;
 
-    internal_node* _next = nullptr;
-    internal_node* _prev = nullptr;
-
-    node* _parent = nullptr;
+    internal_node* _parent = nullptr;
+    btree* _owner = nullptr;
 
     std::size_t _size = 0;
+
+    void set_parent(internal_node* parent) final { _parent = parent; }
 
     using internal_item_type = std::tuple<key_type, std::unique_ptr<node>>;
 
@@ -112,4 +126,6 @@ private:
 
     auto storage_begin() { return std::begin(_storage); }
     auto storage_end() { return storage_begin() + _size; }
+
+    key_type lowest_key() final { return std::get<0>(*storage_begin()); }
 };

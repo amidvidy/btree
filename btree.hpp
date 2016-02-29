@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <tuple>
+#include <iostream>
 
 using key_type = std::int64_t;
 using value_type = std::int64_t;
@@ -10,7 +11,7 @@ using item_type = std::tuple<key_type, value_type>;
 
 // Keep branching factor small to stress splitting logic.
 // TODO: raise to something larger.
-constexpr std::size_t kBranchingFactor = 10;
+constexpr std::size_t kBranchingFactor = 100;
 
 class btree;
 class node;
@@ -29,6 +30,11 @@ public:
 
     iterator end();
     iterator begin();
+
+    // For debugging.
+    std::ostream& print(std::ostream& os);
 private:
+    void insert_node(key_type key, std::unique_ptr<node> node);
+
     std::unique_ptr<node> _root;
 };
