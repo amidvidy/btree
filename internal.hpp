@@ -70,6 +70,9 @@ private:
     static bool item_comparator(const item_type& rhs, const item_type& lhs) {
         return std::get<0>(rhs) < std::get<0>(lhs);
     }
+
+    // Returns the node to insert the key in to.
+    leaf_node* split_for_insert(key_type to_insert);
 };
 
 class iterator : public std::iterator<std::bidirectional_iterator_tag, item_type> {

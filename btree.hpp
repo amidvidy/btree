@@ -11,7 +11,7 @@ using item_type = std::tuple<key_type, value_type>;
 
 // Keep branching factor small to stress splitting logic.
 // TODO: raise to something larger.
-constexpr std::size_t kBranchingFactor = 100;
+constexpr std::size_t kBranchingFactor = 5;
 
 class btree;
 class node;

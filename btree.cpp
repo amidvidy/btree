@@ -140,52 +140,59 @@ std::ostream& internal_node::print(std::ostream& os) {
 
 leaf_node::leaf_node(btree* owner) : _owner(owner) {}
 
+leaf_node* leaf_node::split_for_insert(key_type to_insert) {
+    // time to split. allocate a new node.
+    auto new_node = std::make_unique<leaf_node>(_owner);
+    auto new_node_unowned = new_node.get();
+    auto split_point = storage_begin() + (_size / 2);
+    auto split_key = std::get<0>(*split_point);
+
+    auto old_next = _next;
+    _next = new_node.get();
+    new_node->_next = old_next;
+    new_node->_prev = this;
+
+    // Copy the second half of our entries to the new node.
+    std::move(split_point, storage_end(), new_node->storage_begin());
+
+    auto old_size = _size;
+    _size = split_point - storage_begin();
+    new_node->_size += old_size - _size;  // handle odd branching factors...
+
+    // If we are not the root.
+    if (_parent) {
+        auto new_node_lowest_key = new_node->lowest_key();
+        _parent->insert_node(std::move(new_node_lowest_key), std::move(new_node));
+    } else {
+        // We are the root.
+        // take ownership of ourself.
+        auto this_node = std::move(_owner->_root);
+        // Make a new internal node for the root.
+        auto new_root = std::make_unique<internal_node>(_owner);
+        // insert ourself.
+        auto this_node_lowest_key = lowest_key();
+        new_root->insert_node(std::move(this_node_lowest_key), std::move(this_node));
+        // make the new root our parent (as well as the new node's).
+        // insert the new node.
+        auto new_node_lowest_key = new_node->lowest_key();
+        new_root->insert_node(new_node_lowest_key, std::move(new_node));
+        // make the new node the root.
+        _owner->_root = std::move(new_root);
+    }
+
+    if (to_insert >= split_key) {
+        return new_node_unowned;
+    }
+    return this;
+}
+
 iterator leaf_node::insert(key_type key, value_type value) {
     // Does this entry fit? otherwise we need to split.
     if (_size == kBranchingFactor) {
-        // time to split. allocate a new node.
-        auto new_node = std::make_unique<leaf_node>(_owner);
-        auto new_node_unowned = new_node.get();
-        auto split_point = storage_begin() + (_size / 2);
-        auto split_key = std::get<0>(*split_point);
-
-        auto old_next = _next;
-        _next = new_node.get();
-        new_node->_next = old_next;
-        new_node->_prev = this;
-
-        // Copy the second half of our entries to the new node.
-        std::move(split_point, storage_end(), new_node->storage_begin());
-
-        auto old_size = _size;
-        _size = split_point - storage_begin();
-        new_node->_size += old_size - _size;  // handle odd branching factors...
-
-        // If we are not the root.
-        if (_parent) {
-            auto new_node_lowest_key = new_node->lowest_key();
-            _parent->insert_node(std::move(new_node_lowest_key), std::move(new_node));
-        } else {
-            // We are the root.
-            // take ownership of ourself.
-            auto this_node = std::move(_owner->_root);
-            // Make a new internal node for the root.
-            auto new_root = std::make_unique<internal_node>(_owner);
-            // insert ourself.
-            auto this_node_lowest_key = lowest_key();
-            new_root->insert_node(std::move(this_node_lowest_key), std::move(this_node));
-            // make the new root our parent (as well as the new node's).
-            // insert the new node.
-            auto new_node_lowest_key = new_node->lowest_key();
-            new_root->insert_node(new_node_lowest_key, std::move(new_node));
-            // make the new node the root.
-            _owner->_root = std::move(new_root);
-        }
-
-        // run the insert from the root, in case the new key isn't in our range.
-        if (key >= split_key) {
-            return new_node_unowned->insert(key, value);
-        }
+        leaf_node* node_for_key = split_for_insert(key);
+        // Could end inserting here or the new node, depending on where the key
+        // compared to our split point.
+        return node_for_key->insert(key, value);
     }
     // Use upper bound so items with same key are kept in insertion order.
     auto storage_iter =
