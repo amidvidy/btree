@@ -45,13 +45,11 @@ bool operator!=(const iterator& rhs, const iterator& lhs) {
 internal_node::internal_node(btree* owner) : _owner(owner) {}
 
 iterator internal_node::insert(key_type key, value_type value) {
-    auto storage_iter = std::lower_bound(
+    auto storage_iter = std::upper_bound(
         storage_begin(), storage_end(), internal_item_type(key, nullptr), internal_item_comparator);
-    if (storage_iter == storage_end()) {
-        // If we're larger than the largest key we've seen
-        // add the key to the last bucket.
-        --storage_iter;
-    }
+    // Since we currently point to the first key that is greater than us, we want to
+    // go back one (so we're pointing at the last key less than or equal to us).
+    --storage_iter;
     return std::get<1>(*storage_iter)->insert(key, value);
 }
 
@@ -87,7 +85,8 @@ void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
 
         // If we are not the root.
         if (_parent) {
-            _parent->insert_node(new_node->lowest_key(), std::move(new_node));
+            auto new_node_lowest_key = new_node->lowest_key();
+            _parent->insert_node(new_node_lowest_key, std::move(new_node));
         } else {
             // We are the root.
             // take ownership of ourself.
@@ -99,12 +98,13 @@ void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
             // make the new root our parent (as well as the new node's).
             new_node->_parent = _parent = new_root.get();
             // insert the new node.
-            new_root->insert_node(new_node->lowest_key(), std::move(new_node));
+            auto new_node_lowest_key = new_node->lowest_key();
+            new_root->insert_node(std::move(new_node_lowest_key), std::move(new_node));
             // make the new node the root.
             _owner->_root = std::move(new_root);
         }
 
-        if (key > split_key) {
+        if (key >= split_key) {
             return new_node_unowned->insert_node(key, std::move(node));
         }
     }
@@ -163,7 +163,7 @@ iterator leaf_node::insert(key_type key, value_type value) {
 
         // If we are not the root.
         if (_parent) {
-            auto new_node_lowest_key = lowest_key();
+            auto new_node_lowest_key = new_node->lowest_key();
             _parent->insert_node(std::move(new_node_lowest_key), std::move(new_node));
         } else {
             // We are the root.
@@ -183,7 +183,7 @@ iterator leaf_node::insert(key_type key, value_type value) {
         }
 
         // run the insert from the root, in case the new key isn't in our range.
-        if (key > split_key) {
+        if (key >= split_key) {
             return new_node_unowned->insert(key, value);
         }
     }
@@ -255,16 +255,21 @@ std::ostream& btree::print(std::ostream& os) {
 int main() {
     btree bt;
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 10; ++i) {
         std::cout << "inserting: " << i << std::endl;
-        bt.insert(i, i);
-        // bt.print(std::cout);
+        bt.insert(i, 1);
+        bt.print(std::cout);
     }
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 10; ++i) {
         std::cout << "inserting: " << i << std::endl;
-        bt.insert(i, i);
-        // bt.print(std::cout);
+        bt.insert(i, 2);
+        bt.print(std::cout);
     }
+    // for (int i = 0; i < 10; ++i) {
+    //     std::cout << "inserting: " << i << std::endl;
+    //     bt.insert(i, 3);
+    //     // bt.print(std::cout);
+    // }
 
     for (auto entry : bt) {
         std::cout << "(" << std::get<0>(entry) << ", " << std::get<1>(entry) << ")" << std::endl;
