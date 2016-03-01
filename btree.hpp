@@ -22,6 +22,7 @@ class iterator;
 class btree {
     friend class leaf_node;
     friend class internal_node;
+
 public:
     btree();
 
@@ -33,6 +34,7 @@ public:
 
     // For debugging.
     std::ostream& print(std::ostream& os);
+
 private:
     std::unique_ptr<node> _root;
 };

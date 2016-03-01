@@ -9,9 +9,7 @@
 // ================= iterator ==================================================
 
 void iterator::check_valid() {
-    if (!_node ||
-        _storage_iter < _node->storage_begin() ||
-        _storage_iter >= _node->storage_end()) {
+    if (!_node || _storage_iter < _node->storage_begin() || _storage_iter >= _node->storage_end()) {
         throw std::exception();
     }
 }
@@ -47,17 +45,15 @@ bool operator!=(const iterator& rhs, const iterator& lhs) {
 internal_node::internal_node(btree* owner) : _owner(owner) {}
 
 iterator internal_node::insert(key_type key, value_type value) {
-    auto storage_iter = std::lower_bound(storage_begin(),
-                                         storage_end(),
-                                         key,
-                                         internal_item_comparator);
+    auto storage_iter = std::lower_bound(
+        storage_begin(), storage_end(), internal_item_type(key, nullptr), internal_item_comparator);
     if (storage_iter == storage_end()) {
         // If we're larger than the largest key we've seen
         // add the key to the last bucket.
         --storage_iter;
     }
-    std::cout << "inserting key " << key << " in to node with lowest key = "
-              << std::get<1>(*storage_iter)->lowest_key()
+    std::cout << "inserting key " << key
+              << " in to node with lowest key = " << std::get<1>(*storage_iter)->lowest_key()
               << std::endl;
 
     return std::get<1>(*storage_iter)->insert(key, value);
@@ -92,9 +88,7 @@ void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
         new_node->_size = old_size - _size;
 
         // Update parent pointers.
-        for (auto iter = new_node->storage_begin();
-             iter != new_node->storage_end();
-             ++iter) {
+        for (auto iter = new_node->storage_begin(); iter != new_node->storage_end(); ++iter) {
             std::cout << "updating parent pointer.." << std::endl;
             std::get<1>(*iter)->set_parent(new_node.get());
         }
@@ -125,10 +119,8 @@ void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
 
     node->set_parent(this);
 
-    auto storage_iter = std::upper_bound(storage_begin(),
-                                         storage_end(),
-                                         key,
-                                         internal_item_comparator);
+    auto storage_iter = std::upper_bound(
+        storage_begin(), storage_end(), internal_item_type(key, nullptr), internal_item_comparator);
 
     auto new_end = storage_end() + 1;
     std::move_backward(storage_iter, storage_end(), new_end);
@@ -140,18 +132,17 @@ std::ostream& internal_node::print(std::ostream& os) {
     os << "internal_node:" << this << std::endl;
     auto storage_iter = storage_begin();
     while (storage_iter != storage_end()) {
-        os << "\t" << "key: " << std::get<0>(*storage_iter) << std::endl;
+        os << "\t"
+           << "key: " << std::get<0>(*storage_iter) << std::endl;
         ++storage_iter;
     }
     storage_iter = storage_begin();
     while (storage_iter != storage_end()) {
         std::get<1>(*storage_iter)->print(os);
         ++storage_iter;
-     }
+    }
     return os;
 }
-
-
 
 // =============== leaf node ===================================================
 
@@ -180,11 +171,12 @@ iterator leaf_node::insert(key_type key, value_type value) {
 
         auto old_size = _size;
         _size = split_point - storage_begin();
-        new_node->_size += old_size - _size; // handle odd branching factors...
+        new_node->_size += old_size - _size;  // handle odd branching factors...
 
         // If we are not the root.
         if (_parent) {
-            _parent->insert_node(new_node->lowest_key(), std::move(new_node));
+            auto new_node_lowest_key = lowest_key();
+            _parent->insert_node(std::move(new_node_lowest_key), std::move(new_node));
         } else {
             // We are the root.
             // take ownership of ourself.
@@ -192,10 +184,12 @@ iterator leaf_node::insert(key_type key, value_type value) {
             // Make a new internal node for the root.
             auto new_root = std::make_unique<internal_node>(_owner);
             // insert ourself.
-            new_root->insert_node(lowest_key(), std::move(this_node));
+            auto this_node_lowest_key = lowest_key();
+            new_root->insert_node(std::move(this_node_lowest_key), std::move(this_node));
             // make the new root our parent (as well as the new node's).
             // insert the new node.
-            new_root->insert_node(new_node->lowest_key(), std::move(new_node));
+            auto new_node_lowest_key = new_node->lowest_key();
+            new_root->insert_node(new_node_lowest_key, std::move(new_node));
             // make the new node the root.
             _owner->_root = std::move(new_root);
         }
@@ -206,7 +200,8 @@ iterator leaf_node::insert(key_type key, value_type value) {
         }
     }
     // Use upper bound so items with same key are kept in insertion order.
-    auto storage_iter = std::upper_bound(storage_begin(), storage_end(), key, item_comparator);
+    auto storage_iter =
+        std::upper_bound(storage_begin(), storage_end(), item_type(key, value), item_comparator);
     if (storage_iter != storage_end()) {
         // We already are in range. Move the matching elements back to make room.
         auto new_end = storage_end() + 1;
@@ -222,7 +217,7 @@ iterator leaf_node::insert(key_type key, value_type value) {
 
 iterator leaf_node::search(key_type key) {
     auto storage_iter =
-        std::lower_bound(storage_begin(), storage_end(), key, item_comparator);
+        std::lower_bound(storage_begin(), storage_end(), item_type(key, -1), item_comparator);
 
     if (storage_iter != storage_end()) {
         return iterator(this, storage_iter);
@@ -239,11 +234,7 @@ std::ostream& leaf_node::print(std::ostream& os) {
     auto iter = storage_begin();
     while (iter != storage_end()) {
         os << "\t"
-           << "("
-           << std::get<0>(*iter)
-           << ", "
-           << std::get<1>(*iter)
-           << ")" << std::endl;
+           << "(" << std::get<0>(*iter) << ", " << std::get<1>(*iter) << ")" << std::endl;
         ++iter;
     }
     return os;

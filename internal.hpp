@@ -26,10 +26,15 @@ public:
     iterator search(key_type key) final;
     iterator begin() final;
 
-    leaf_node* next() { return _next; }
-    leaf_node* prev() { return _prev; }
+    leaf_node* next() {
+        return _next;
+    }
+    leaf_node* prev() {
+        return _prev;
+    }
 
     std::ostream& print(std::ostream& os) final;
+
 private:
     internal_node* _parent = nullptr;
 
@@ -46,7 +51,9 @@ private:
 
     using storage_iter_type = decltype(std::begin(_storage));
 
-    void set_parent(internal_node* parent) final { _parent = parent; }
+    void set_parent(internal_node* parent) final {
+        _parent = parent;
+    }
 
     auto storage_begin() {
         return std::begin(_storage);
@@ -65,12 +72,11 @@ private:
     }
 };
 
-class iterator : public std::iterator<std::bidirectional_iterator_tag,
-                                      item_type> {
+class iterator : public std::iterator<std::bidirectional_iterator_tag, item_type> {
 public:
     iterator() = default;
-    iterator(leaf_node* node, leaf_node::storage_iter_type storage_iter) :
-        _node(node), _storage_iter(storage_iter) {}
+    iterator(leaf_node* node, leaf_node::storage_iter_type storage_iter)
+        : _node(node), _storage_iter(storage_iter) {}
 
     item_type& operator*();
     item_type* operator->();
@@ -82,10 +88,13 @@ public:
 
     friend bool operator==(const iterator& rhs, const iterator& lhs);
     friend bool operator!=(const iterator& rhs, const iterator& lhs);
+
 private:
     void check_valid();
 
-    auto tie() const { return std::tie(_node, _storage_iter); }
+    auto tie() const {
+        return std::tie(_node, _storage_iter);
+    }
 
     leaf_node* _node = nullptr;
     leaf_node::storage_iter_type _storage_iter = nullptr;
@@ -93,6 +102,7 @@ private:
 
 class internal_node : public node {
     friend class leaf_node;
+
 public:
     internal_node(btree* owner);
 
@@ -102,9 +112,12 @@ public:
     iterator begin() final;
 
     std::ostream& print(std::ostream& os) final;
+
 private:
     void insert_node(key_type lowest_key, std::unique_ptr<node> node);
-    void set_parent(internal_node* parent) final { _parent = parent; }
+    void set_parent(internal_node* parent) final {
+        _parent = parent;
+    }
 
     internal_node* _parent = nullptr;
     btree* _owner = nullptr;
@@ -119,7 +132,13 @@ private:
         return std::get<0>(lhs) < std::get<0>(rhs);
     }
 
-    auto storage_begin() { return std::begin(_storage); }
-    auto storage_end() { return storage_begin() + _size; }
-    key_type lowest_key() final { return std::get<0>(*storage_begin()); }
+    auto storage_begin() {
+        return std::begin(_storage);
+    }
+    auto storage_end() {
+        return storage_begin() + _size;
+    }
+    key_type lowest_key() final {
+        return std::get<0>(*storage_begin());
+    }
 };
