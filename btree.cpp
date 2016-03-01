@@ -52,10 +52,6 @@ iterator internal_node::insert(key_type key, value_type value) {
         // add the key to the last bucket.
         --storage_iter;
     }
-    std::cout << "inserting key " << key
-              << " in to node with lowest key = " << std::get<1>(*storage_iter)->lowest_key()
-              << std::endl;
-
     return std::get<1>(*storage_iter)->insert(key, value);
 }
 
@@ -68,11 +64,8 @@ iterator internal_node::search(key_type key) {
 }
 
 void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
-    std::cout << "inserting node with lowest key: " << node->lowest_key()
-              << " in to node with lowest key: " << lowest_key() << std::endl;
     if (_size == kBranchingFactor) {
         // handle splits later.
-        std::cout << "splitting internal..." << std::endl;
         // time to split. allocate a new node.
         auto new_node = std::make_unique<internal_node>(_owner);
         auto new_node_unowned = new_node.get();
@@ -89,7 +82,6 @@ void internal_node::insert_node(key_type key, std::unique_ptr<node> node) {
 
         // Update parent pointers.
         for (auto iter = new_node->storage_begin(); iter != new_node->storage_end(); ++iter) {
-            std::cout << "updating parent pointer.." << std::endl;
             std::get<1>(*iter)->set_parent(new_node.get());
         }
 
@@ -151,15 +143,11 @@ leaf_node::leaf_node(btree* owner) : _owner(owner) {}
 iterator leaf_node::insert(key_type key, value_type value) {
     // Does this entry fit? otherwise we need to split.
     if (_size == kBranchingFactor) {
-        std::cout << "splitting leaf..." << std::endl;
         // time to split. allocate a new node.
         auto new_node = std::make_unique<leaf_node>(_owner);
         auto new_node_unowned = new_node.get();
         auto split_point = storage_begin() + (_size / 2);
         auto split_key = std::get<0>(*split_point);
-
-        std::cout << "split point is: " << split_key << std::endl;
-        std::cout << "_parent is " << _parent << std::endl;
 
         auto old_next = _next;
         _next = new_node.get();
@@ -270,12 +258,12 @@ int main() {
     for (int i = 0; i < 100; ++i) {
         std::cout << "inserting: " << i << std::endl;
         bt.insert(i, i);
-        bt.print(std::cout);
+        // bt.print(std::cout);
     }
     for (int i = 0; i < 100; ++i) {
         std::cout << "inserting: " << i << std::endl;
         bt.insert(i, i);
-        bt.print(std::cout);
+        // bt.print(std::cout);
     }
 
     for (auto entry : bt) {
