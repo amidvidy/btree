@@ -4,37 +4,41 @@
 #include <memory>
 #include <tuple>
 #include <iostream>
+#include <functional>
 
-using key_type = std::int64_t;
-using value_type = std::int64_t;
-using item_type = std::tuple<key_type, value_type>;
+namespace amidvidy {
 
-// Keep branching factor small to stress splitting logic.
-// TODO: raise to something larger.
-constexpr std::size_t kBranchingFactor = 5;
-
-class btree;
-class node;
-class leaf_node;
-class internal_node;
-class iterator;
-
+template <typename K, typename V, std::size_t BucketSize = 100u,
+          typename Compare = std::less<K>>
 class btree {
-    friend class leaf_node;
-    friend class internal_node;
+  class node;
+  class leaf_node;
+  class internal_node;
 
 public:
-    btree();
+  btree();
 
-    iterator insert(key_type key, value_type value);
-    iterator search(key_type key);
+  using key_type = K;
+  using value_type = V;
+  using item_type = std::tuple<key_type, value_type>;
 
-    iterator end();
-    iterator begin();
+  class iterator;
 
-    // For debugging.
-    std::ostream& print(std::ostream& os);
+  iterator insert(key_type key, value_type value);
+  iterator search(key_type key);
+
+  iterator end();
+  iterator begin();
+
+  // For debugging.
+  std::ostream &print(std::ostream &os);
 
 private:
-    std::unique_ptr<node> _root;
+  std::unique_ptr<node> _root;
 };
+
+} // namespace amidvidy
+
+#define AMIDVIDY_IN_BTREE_HPP
+#include "internal.hpp"
+#undef AMIDVIDY_IN_BTREE_HPP
