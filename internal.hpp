@@ -10,14 +10,21 @@
 
 namespace amidvidy {
 
+// TODO, move a lot of common functionality between leaf and internal nodes up
+// here.
 template <typename K, typename V, std::size_t BucketSize, typename Compare>
 class btree<K, V, BucketSize, Compare>::node {
 public:
   virtual ~node() = default;
+
   virtual iterator search(key_type key) = 0;
+
   virtual iterator insert(key_type key, value_type value) = 0;
+
   virtual iterator begin() = 0;
+
   virtual std::ostream &print(std::ostream &os) = 0;
+
   virtual void set_parent(internal_node *parent) = 0;
 
   virtual key_type lowest_key() = 0;
@@ -61,9 +68,11 @@ public:
     }
     return iterator();
   }
+
   iterator begin() final { return iterator(this, storage_begin()); }
 
   leaf_node *next() { return _next; }
+
   leaf_node *prev() { return _prev; }
 
   std::ostream &print(std::ostream &os) final {
@@ -160,6 +169,7 @@ class btree<K, V, BucketSize, Compare>::iterator
     : public std::iterator<std::bidirectional_iterator_tag, item_type> {
 public:
   iterator() = default;
+
   iterator(leaf_node *node,
            typename btree<K, V, BucketSize,
                           Compare>::leaf_node::storage_iter_type storage_iter)
@@ -169,6 +179,7 @@ public:
     check_valid();
     return *_storage_iter;
   }
+
   item_type *operator->() {
     check_valid();
     return *_storage_iter;
@@ -200,6 +211,7 @@ public:
   friend bool operator==(const iterator &rhs, const iterator &lhs) {
     return rhs.tie() == lhs.tie();
   }
+
   friend bool operator!=(const iterator &rhs, const iterator &lhs) {
     return !(rhs == lhs);
   }
@@ -293,7 +305,9 @@ private:
   }
 
   auto storage_begin() { return std::begin(_storage); }
+
   auto storage_end() { return storage_begin() + _size; }
+
   key_type lowest_key() final { return std::get<0>(*storage_begin()); }
 
   internal_node *split_for_insert(key_type to_insert) {
