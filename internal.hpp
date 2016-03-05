@@ -250,7 +250,13 @@ public:
   }
 
   iterator search(key_type key) final {
-    return iterator(); // TODO
+    auto storage_iter = std::lower_bound(storage_begin(), storage_end(),
+                                         internal_item_type(key, nullptr),
+                                         internal_item_comparator);
+    if (storage_iter == storage_end()) {
+      return iterator();
+    }
+    return std::get<1>(*storage_iter)->search(key);
   }
 
   iterator begin() final { return std::get<1>(*storage_begin())->begin(); }
